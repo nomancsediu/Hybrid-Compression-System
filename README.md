@@ -7,7 +7,7 @@
 **OS Lab Project — Group Submission**
 
 [![nomancsediu](https://img.shields.io/badge/GitHub-nomancsediu-181717?logo=github)](https://github.com/nomancsediu)
-[![supanroy](https://img.shields.io/badge/GitHub-supanroy-181717?logo=github)](https://github.com/supanroy)
+[![supan-roy](https://img.shields.io/badge/GitHub-supan--roy-181717?logo=github)](https://github.com/supan-roy)
 [![hassain--joy](https://img.shields.io/badge/GitHub-hassain--joy-181717?logo=github)](https://github.com/hassain-joy)
 [![jeba234](https://img.shields.io/badge/GitHub-jeba234-181717?logo=github)](https://github.com/jeba234)
 
