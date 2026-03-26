@@ -8,7 +8,7 @@
 
 [![nomancsediu](https://img.shields.io/badge/GitHub-nomancsediu-181717?logo=github)](https://github.com/nomancsediu)
 [![supan-roy](https://img.shields.io/badge/GitHub-supan--roy-181717?logo=github)](https://github.com/supan-roy)
-[![hassain--joy](https://img.shields.io/badge/GitHub-hassain--joy-181717?logo=github)](https://github.com/hassain-joy)
+[![hossain-joy](https://img.shields.io/badge/GitHub-hassain--joy-181717?logo=github)](https://github.com/hassain-joy)
 [![jeba234](https://img.shields.io/badge/GitHub-jeba234-181717?logo=github)](https://github.com/jeba234)
 
 </div>
