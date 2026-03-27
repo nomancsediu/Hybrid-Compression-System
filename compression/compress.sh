@@ -1,9 +1,7 @@
 #!/bin/bash
 #
 # compress.sh
-# Smart compression: detects file type and applies appropriate algorithm
-# - Text files: RLE -> LZW -> gzip
-# - Already-compressed/binary: gzip only
+# Compression pipeline: RLE -> LZW -> gzip
 #
 # Usage: ./compress.sh <input_file> <output_file>
 
@@ -17,18 +15,6 @@ validate_input() {
         zenity --error --title="Error" --text="Input file not found:\n${file}" --width=400
         exit 1
     fi
-}
-
-is_compressible() {
-    local file="$1"
-    local ext="${file##*.}"
-    ext="${ext,,}"
-    
-    local compressed_exts="zip docx xlsx pptx jpg jpeg png gif mp4 mp3 rar gz bz2 7z webp heic"
-    for fmt in $compressed_exts; do
-        [[ "$ext" == "$fmt" ]] && return 1
-    done
-    return 0
 }
 
 run_pipeline() {
@@ -70,38 +56,9 @@ run_pipeline() {
     fi
 }
 
-run_gzip_only() {
-    local input_file="$1"
-    local output_file="$2"
-
-    (
-        echo "50"; echo "# Applying GZIP compression..."
-        sleep 0.3
-        echo "100"; echo "# Done."
-    ) | zenity --progress \
-            --title="Compressing File" \
-            --text="Please wait..." \
-            --percentage=0 \
-            --width=400 \
-            --no-cancel \
-            --auto-close 2>/dev/null &
-    local zen_pid=$!
-
-    gzip -9 -c "$input_file" > "$output_file"
-
-    kill "$zen_pid" 2>/dev/null || true
-    wait "$zen_pid" 2>/dev/null || true
-
-    if [[ ! -f "$output_file" ]] || [[ ! -s "$output_file" ]]; then
-        zenity --error --title="Error" --text="Compression failed: output file not created." --width=400
-        exit 1
-    fi
-}
-
 show_result() {
     local input_file="$1"
     local output_file="$2"
-    local algorithm="$3"
     local original_size compressed_size ratio
 
     original_size="$(wc -c < "$input_file")"
@@ -110,7 +67,7 @@ show_result() {
 
     zenity --info \
         --title="Compression Complete" \
-        --text="File compressed successfully.\n\nAlgorithm: ${algorithm}\n\nOriginal Size:     ${original_size} bytes\nCompressed Size:   ${compressed_size} bytes\nCompression Ratio: ${ratio}%" \
+        --text="File compressed successfully.\n\nAlgorithm: RLE + LZW + GZIP\n\nOriginal Size:     ${original_size} bytes\nCompressed Size:   ${compressed_size} bytes\nCompression Ratio: ${ratio}%" \
         --width=400 2>/dev/null
 }
 
@@ -118,14 +75,8 @@ main() {
     local input_file="$1"
     local output_file="$2"
     validate_input "$input_file"
-    
-    if is_compressible "$input_file"; then
-        run_pipeline "$input_file" "$output_file"
-        show_result  "$input_file" "$output_file" "RLE + LZW + GZIP"
-    else
-        run_gzip_only "$input_file" "$output_file"
-        show_result   "$input_file" "$output_file" "GZIP Only (Pre-compressed format detected)"
-    fi
+    run_pipeline   "$input_file" "$output_file"
+    show_result    "$input_file" "$output_file"
 }
 
 main "$@"
