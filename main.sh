@@ -17,10 +17,47 @@ show_menu() {
         --title="Hybrid Compression System" \
         --text="Select an operation" \
         --column="Operation" \
-        --width=500 --height=280 \
+        --width=500 --height=320 \
         --modal \
         "Compress File" \
+        "Decompress File" \
         "Exit" 2>/dev/null
+}
+handle_decompress() {
+    local input_file output_file method dir_name base_name name_only extension
+
+    input_file=$(zenity --file-selection --title="Select File to Decompress" --width=700 --height=500 2>/dev/null)
+    [[ -z "$input_file" ]] && return 0
+
+    dir_name="$(dirname "$input_file")"
+    base_name="$(basename "$input_file")"
+    name_only="${base_name%.*}"
+    extension="${base_name##*.}"
+
+    method=$(zenity --list \
+        --title="Select Decompression Method" \
+        --text="Choose the decompression algorithm for this file:" \
+        --column="Method" --column="Description" \
+        "gzip" "GZIP (RLE+LZW+GZIP Pipeline)" \
+        "rle" "Run-Length Encoding (RLE)" \
+        "lzw" "Lempel-Ziv-Welch (LZW)" \
+        "pdf" "PDF (Ghostscript)" \
+        --width=500 --height=300 --hide-column=2 --print-column=1 --modal 2>/dev/null)
+    [[ -z "$method" ]] && return 0
+
+    local out_ext
+    case "$method" in
+        pdf) out_ext="pdf" ;;
+        *)   out_ext="txt" ;;
+    esac
+
+    output_file=$(zenity --file-selection --save \
+        --title="Save Decompressed File As" \
+        --filename="${dir_name}/${name_only}_restored.${out_ext}" \
+        --width=700 --height=500 2>/dev/null)
+    [[ -z "$output_file" ]] && return 0
+
+    bash "${SCRIPT_DIR}/decompression/decompress.sh" "$input_file" "$output_file" "$method"
 }
 
 handle_compress() {
@@ -59,6 +96,7 @@ main() {
 
         case "$choice" in
             "Compress File") handle_compress ;;
+            "Decompress File") handle_decompress ;;
             "Exit" | "")      exit 0           ;;
         esac
     done
