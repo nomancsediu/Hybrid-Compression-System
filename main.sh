@@ -24,7 +24,7 @@ show_menu() {
         "Exit" 2>/dev/null
 }
 handle_decompress() {
-    local input_file output_file method dir_name base_name name_only extension
+    local input_file output_file dir_name base_name name_only extension out_ext
 
     input_file=$(zenity --file-selection --title="Select File to Decompress" --width=700 --height=500 2>/dev/null)
     [[ -z "$input_file" ]] && return 0
@@ -34,22 +34,15 @@ handle_decompress() {
     name_only="${base_name%.*}"
     extension="${base_name##*.}"
 
-    method=$(zenity --list \
-        --title="Select Decompression Method" \
-        --text="Choose the decompression algorithm for this file:" \
-        --column="Method" --column="Description" \
-        "gzip" "GZIP (RLE+LZW+GZIP Pipeline)" \
-        "rle" "Run-Length Encoding (RLE)" \
-        "lzw" "Lempel-Ziv-Welch (LZW)" \
-        "pdf" "PDF (Ghostscript)" \
-        --width=500 --height=300 --hide-column=2 --print-column=1 --modal 2>/dev/null)
-    [[ -z "$method" ]] && return 0
-
-    local out_ext
-    case "$method" in
-        pdf) out_ext="pdf" ;;
-        *)   out_ext="txt" ;;
-    esac
+    # Auto-detect output extension based on input file
+    if [[ "$base_name" == *.pdf.gz ]]; then
+        # PDF compressed file
+        name_only="${base_name%.pdf.gz}"
+        out_ext="pdf"
+    else
+        # Regular compressed file
+        out_ext="txt"
+    fi
 
     output_file=$(zenity --file-selection --save \
         --title="Save Decompressed File As" \
@@ -57,7 +50,7 @@ handle_decompress() {
         --width=700 --height=500 2>/dev/null)
     [[ -z "$output_file" ]] && return 0
 
-    bash "${SCRIPT_DIR}/decompression/decompress.sh" "$input_file" "$output_file" "$method"
+    bash "${SCRIPT_DIR}/decompression/decompress.sh" "$input_file" "$output_file"
 }
 
 handle_compress() {
