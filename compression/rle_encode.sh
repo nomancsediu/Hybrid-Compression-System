@@ -1,79 +1,31 @@
 #!/bin/bash
-#
-# rle_encode.sh
-# Applies Run-Length Encoding (RLE) to a text file.
-# Consecutive characters repeated 3 or more times are replaced
-# with their count followed by the character (e.g. AAAAA -> 5A).
-# Sequences shorter than 3 are written as-is to avoid size inflation.
-#
+# rle_encode.sh — binary-safe RLE encoder
+# Encoding: each run is stored as 2 bytes: [count 1-255][byte]
+# Single bytes with no run are stored as [1][byte].
+# This is unambiguous and handles all byte values including digits and nulls.
 # Usage: ./rle_encode.sh <input_file> <output_file>
-#
-# Author: Abdullah Al Noman
-# Version: 1.0
 
 set -euo pipefail
+[[ ! -f "$1" ]] && { echo "Error: file not found: $1" >&2; exit 1; }
 
-# ---------------------------------------------------------------------------
-# validate_input <file>
-# ---------------------------------------------------------------------------
-validate_input() {
-    local file="$1"
+python3 - "$1" "$2" <<'EOF'
+import sys
 
-    if [[ ! -f "$file" ]]; then
-        echo "Error: input file not found: ${file}" >&2
-        exit 1
-    fi
-}
+in_path, out_path = sys.argv[1], sys.argv[2]
 
-# ---------------------------------------------------------------------------
-# encode <input_file> <output_file>
-#   Performs character-level RLE encoding using awk.
-# ---------------------------------------------------------------------------
-encode() {
-    local input_file="$1"
-    local output_file="$2"
-
-    awk '
-    BEGIN { ORS = "" }
-    {
-        n = length($0)
-        for (i = 1; i <= n; i++) {
-            c = substr($0, i, 1)
-            if (c == prev) {
-                count++
-            } else {
-                if (prev != "") {
-                    if (count >= 3)
-                        printf "%d%s", count, prev
-                    else
-                        for (j = 0; j < count; j++) printf "%s", prev
-                }
-                prev  = c
-                count = 1
-            }
-        }
-        if (prev != "") {
-            if (count >= 3)
-                printf "%d%s", count, prev
-            else
-                for (j = 0; j < count; j++) printf "%s", prev
-        }
-        printf "\n"
-        prev  = ""
-        count = 0
-    }
-    ' "$input_file" > "$output_file"
-}
-
-# ---------------------------------------------------------------------------
-# main
-# ---------------------------------------------------------------------------
-main() {
-    local input_file="$1"
-    local output_file="$2"
-
-    validate_input "$input_file"
-    encode         "$input_file" "$output_file"
-}
-
-main "$@"
+with open(in_path, "rb") as fin, open(out_path, "wb") as fout:
+    data = fin.read()
+    if not data:
+        sys.exit(0)
+    i, n = 0, len(data)
+    out = bytearray()
+    while i < n:
+        b = data[i]
+        count = 1
+        while count < 255 and i + count < n and data[i + count] == b:
+            count += 1
+        out.append(count)
+        out.append(b)
+        i += count
+    fout.write(out)
+EOF

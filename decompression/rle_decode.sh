@@ -1,39 +1,25 @@
 #!/bin/bash
-# RLE decompression script
+# rle_decode.sh — binary-safe RLE decoder
+# Reverses the [count][byte] encoding produced by rle_encode.sh.
 # Usage: ./rle_decode.sh <input_file> <output_file>
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <input_file> <output_file>"
-    exit 1
-fi
+set -euo pipefail
+[[ ! -f "$1" ]] && { echo "Error: file not found: $1" >&2; exit 1; }
 
-INPUT_FILE="$1"
-OUTPUT_FILE="$2"
+python3 - "$1" "$2" <<'EOF'
+import sys
 
-# RLE decompression logic
-awk '
-BEGIN { ORS = "" }
-{
-    line = $0
-    n = length(line)
-    i = 1
-    while (i <= n) {
-        c = substr(line, i, 1)
-        if (c ~ /[0-9]/) {
-            # Parse count (must convert to number for proper loop iteration)
-            count = 0
-            while (i <= n && substr(line, i, 1) ~ /[0-9]/) {
-                count = count * 10 + substr(line, i, 1)
-                i++
-            }
-            char = substr(line, i, 1)
-            for (j = 0; j < count; j++) printf "%s", char
-            i++
-        } else {
-            printf "%s", c
-            i++
-        }
-    }
-    printf "\n"
-}
-' "$INPUT_FILE" > "$OUTPUT_FILE"
+in_path, out_path = sys.argv[1], sys.argv[2]
+
+with open(in_path, "rb") as fin, open(out_path, "wb") as fout:
+    data = fin.read()
+    if len(data) % 2 != 0:
+        print("Error: corrupt RLE data (odd byte count)", file=sys.stderr)
+        sys.exit(1)
+    out = bytearray()
+    for i in range(0, len(data), 2):
+        count = data[i]
+        byte  = data[i + 1]
+        out.extend(bytes([byte]) * count)
+    fout.write(out)
+EOF

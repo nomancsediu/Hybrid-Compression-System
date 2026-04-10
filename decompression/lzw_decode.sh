@@ -1,39 +1,52 @@
 #!/bin/bash
-# LZW decompression script
+# lzw_decode.sh — binary-safe LZW decoder
+# Reads the packed big-endian 16-bit codes produced by lzw_encode.sh.
 # Usage: ./lzw_decode.sh <input_file> <output_file>
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <input_file> <output_file>"
-    exit 1
-fi
+set -euo pipefail
+[[ ! -f "$1" ]] && { echo "Error: file not found: $1" >&2; exit 1; }
 
-INPUT_FILE="$1"
-OUTPUT_FILE="$2"
+python3 - "$1" "$2" <<'EOF'
+import sys, struct
 
-# LZW decompression logic
-awk '
-BEGIN {
-    for (i = 0; i < 256; i++) {
-        dict[i] = sprintf("%c", i)
-    }
-    next_code = 256
-    prev = ""
-}
-{
-    code = $1
-    if (code in dict) {
-        entry = dict[code]
-    } else if (code == next_code) {
-        entry = prev prev_substr
-    } else {
-        print "Decoding error: unknown code " code > "/dev/stderr"
-        exit 1
-    }
-    printf "%s", entry
-    if (prev != "") {
-        prev_substr = substr(entry, 1, 1)
-        dict[next_code++] = prev prev_substr
-    }
+in_path, out_path = sys.argv[1], sys.argv[2]
+
+with open(in_path, "rb") as fin:
+    raw = fin.read()
+
+if len(raw) < 4:
+    open(out_path, "wb").close()
+    sys.exit(0)
+
+count = struct.unpack_from(">I", raw, 0)[0]
+expected = 4 + count * 2
+if len(raw) < expected:
+    print("Error: truncated LZW data", file=sys.stderr)
+    sys.exit(1)
+
+codes = struct.unpack_from(">" + "H" * count, raw, 4)
+
+table = {i: bytes([i]) for i in range(256)}
+next_code = 256
+
+out = bytearray()
+prev = table[codes[0]]
+out.extend(prev)
+
+for code in codes[1:]:
+    if code in table:
+        entry = table[code]
+    elif code == next_code:
+        entry = prev + prev[:1]
+    else:
+        print(f"Error: unknown LZW code {code}", file=sys.stderr)
+        sys.exit(1)
+    out.extend(entry)
+    if next_code <= 65535:
+        table[next_code] = prev + entry[:1]
+        next_code += 1
     prev = entry
-}
-' "$INPUT_FILE" > "$OUTPUT_FILE"
+
+with open(out_path, "wb") as fout:
+    fout.write(out)
+EOF
