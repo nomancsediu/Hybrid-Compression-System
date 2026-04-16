@@ -10,6 +10,7 @@
 [![supan-roy](https://img.shields.io/badge/GitHub-supan--roy-181717?logo=github)](https://github.com/supan-roy)
 [![hossain-joy](https://img.shields.io/badge/GitHub-hossain--joy-181717?logo=github)](https://github.com/hossain-joy)
 [![jeba234](https://img.shields.io/badge/GitHub-jeba234-181717?logo=github)](https://github.com/jeba234)
+[![awalhsnmunna](https://img.shields.io/badge/GitHub-awalhsnmunna-181717?logo=github)](https://github.com/awalhsnmunna)
 
 </div>
 
@@ -325,15 +326,6 @@ Hybrid-Compression-System/
 - **Passwords** are case-sensitive and require validation
 - **Original files** are NOT deleted after compression (only optional for folders)
 
----
-
-## 🤝 Group Contributors
-
-[![nomancsediu](https://img.shields.io/badge/GitHub-nomancsediu-181717?logo=github)](https://github.com/nomancsediu)
-[![supan-roy](https://img.shields.io/badge/GitHub-supan--roy-181717?logo=github)](https://github.com/supan-roy)
-[![hossain-joy](https://img.shields.io/badge/GitHub-hossain--joy-181717?logo=github)](https://github.com/hossain-joy)
-[![jeba234](https://img.shields.io/badge/GitHub-jeba234-181717?logo=github)](https://github.com/jeba234)
-[![awalhsnmunna](https://img.shields.io/badge/GitHub-awalhsnmunna-181717?logo=github)](https://github.com/awalhsnmunna)
 
 ---
 
