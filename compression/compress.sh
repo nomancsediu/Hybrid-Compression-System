@@ -61,6 +61,9 @@ show_result() {
     local output_file="$2"
     local original_size compressed_size ratio
 
+    # Skip showing result if SUPPRESS_STATS is set
+    [[ -n "${SUPPRESS_STATS:-}" ]] && return 0
+
     original_size="$(wc -c < "$input_file")"
     compressed_size="$(wc -c < "$output_file")"
     ratio="$(awk "BEGIN { printf \"%.1f\", (1 - ${compressed_size}/${original_size}) * 100 }")"
