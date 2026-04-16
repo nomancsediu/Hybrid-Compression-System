@@ -2,7 +2,7 @@
 # main.sh — Hybrid Compression System GUI entry point
 # Usage: ./main.sh
 
-set -euo pipefail
+set +e
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -27,8 +27,7 @@ show_menu() {
         "Compress Folder" \
         "Decompress File/Archive" \
         "Encrypt File" \
-        "Decrypt File" \
-        "Exit" 2>/dev/null
+        "Decrypt File" 2>/dev/null
 }
 
 handle_encrypt() {
@@ -36,6 +35,19 @@ handle_encrypt() {
 
     input_file=$(zenity --file-selection --title="Select File to Encrypt" --width=700 --height=500 2>/dev/null)
     [[ -z "$input_file" ]] && return 0
+
+    # Check file size - decline if over 1GB
+    local file_size=$(wc -c < "$input_file")
+    local max_size=$((1024 * 1024 * 1024))  # 1GB in bytes
+
+    if [[ $file_size -gt $max_size ]]; then
+        local size_gb=$(awk "BEGIN { printf \"%.2f\", $file_size / (1024 * 1024 * 1024) }")
+        zenity --error \
+            --title="File Size Exceeds Limit" \
+            --text="Selected file is ${size_gb}GB, which exceeds the 1GB limit.\n\nEncryption of files this large may cause system instability.\n\nPlease select a smaller file." \
+            --width=400 2>/dev/null
+        return 0
+    fi
 
     dir_name="$(dirname "$input_file")"
     name_only="$(basename "${input_file%.*}")"
@@ -54,6 +66,19 @@ handle_decrypt() {
 
     input_file=$(zenity --file-selection --title="Select File to Decrypt" --width=700 --height=500 2>/dev/null)
     [[ -z "$input_file" ]] && return 0
+
+    # Check file size - decline if encrypted file is over 1GB
+    local file_size=$(wc -c < "$input_file")
+    local max_size=$((1024 * 1024 * 1024))  # 1GB in bytes
+
+    if [[ $file_size -gt $max_size ]]; then
+        local size_gb=$(awk "BEGIN { printf \"%.2f\", $file_size / (1024 * 1024 * 1024) }")
+        zenity --error \
+            --title="File Size Exceeds Limit" \
+            --text="Selected file is ${size_gb}GB, which exceeds the 1GB limit.\n\nDecryption of files this large may cause system instability.\n\nPlease select a smaller file." \
+            --width=400 2>/dev/null
+        return 0
+    fi
 
     dir_name="$(dirname "$input_file")"
     name_only="$(basename "${input_file%.*}")"
@@ -99,6 +124,16 @@ handle_compress() {
     fi
 }
 
+handle_compress_single() {
+    # This function is no longer needed but kept for reference
+    return 0
+}
+
+handle_compress_multi() {
+    # This function is no longer needed but kept for reference
+    return 0
+}
+
 handle_compress_folder() {
     local input_dir base_name output_file tmp_tar
 
@@ -106,6 +141,19 @@ handle_compress_folder() {
         --title="Select Folder to Compress" \
         --width=700 --height=500 2>/dev/null) || return 0
     [[ -z "$input_dir" ]] && return 0
+
+    # Check folder size - decline if over 1GB
+    local folder_size=$(du -sb "$input_dir" | cut -f1)
+    local max_size=$((1024 * 1024 * 1024))  # 1GB in bytes
+
+    if [[ $folder_size -gt $max_size ]]; then
+        local size_gb=$(awk "BEGIN { printf \"%.2f\", $folder_size / (1024 * 1024 * 1024) }")
+        zenity --error \
+            --title="Folder Size Exceeds Limit" \
+            --text="Selected folder is ${size_gb}GB, which exceeds the 1GB limit.\n\nCompression of folders this large may cause system instability.\n\nPlease select a smaller folder or compress it separately." \
+            --width=400 2>/dev/null
+        return 0
+    fi
 
     base_name="$(basename "$input_dir")"
 
@@ -179,7 +227,8 @@ handle_decompress() {
 main() {
     while true; do
         local choice
-        choice="$(show_menu)" || true
+        choice=$(show_menu)
+        [[ -z "$choice" ]] && exit 0
 
         case "$choice" in
             "Compress File")           handle_compress         ;;

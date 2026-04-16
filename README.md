@@ -1,6 +1,6 @@
 <div align="center">
 
-# Hybrid File Compression System
+# HFC Archiver: Hybrid File Compression System
 
 **A Desktop Application for Linux**
 
@@ -10,6 +10,7 @@
 [![supan-roy](https://img.shields.io/badge/GitHub-supan--roy-181717?logo=github)](https://github.com/supan-roy)
 [![hossain-joy](https://img.shields.io/badge/GitHub-hossain--joy-181717?logo=github)](https://github.com/hossain-joy)
 [![jeba234](https://img.shields.io/badge/GitHub-jeba234-181717?logo=github)](https://github.com/jeba234)
+[![awalhsnmunna](https://img.shields.io/badge/GitHub-awalhsnmunna-181717?logo=github)](https://github.com/awalhsnmunna)
 
 </div>
 
@@ -92,7 +93,32 @@ sudo apt install bash python3 zenity ghostscript tar gzip
 
 ---
 
-## 🧠 How It Works
+## 🔐 Security Features
+
+- **AES-256-CBC Encryption**: Military-grade encryption standard
+- **PBKDF2 Key Derivation**: 100,000 iterations for strong key generation
+- **Password Requirements**:
+  - Minimum 6 characters
+  - At least one alphabetic character (a-z, A-Z)
+  - At least one numeric character (0-9)
+- **Retry Support**: Wrong password attempts don't exit the application
+
+---
+
+## 📊 Compression Statistics
+
+After compression, HFC Archiver displays:
+- **Original Size**: Total bytes of uncompressed file(s)
+- **Compressed Size**: Total bytes of compressed file(s)
+- **Compression Ratio**: Percentage reduction (higher = better compression)
+
+Example:
+```
+Files Compressed: 3
+Total Original Size: 45,382,104 bytes
+Total Compressed Size: 5,287,345 bytes
+Compression Ratio: 88.3%
+```
 
 ### Compression Pipeline (Text / Binary / Archive Files)
 
