@@ -17,46 +17,52 @@
 
 ## 📌 About The Project
 
-The **Hybrid File Compression System** is a pure Bash-based desktop application designed for Linux. It provides a simple, intuitive Graphical User Interface (GUI) to compress and decompress files and folders. The project utilizes a custom multi-stage compression pipeline combining Run-Length Encoding (RLE) and Lempel-Ziv-Welch (LZW) algorithms, resulting in high compression ratios without the need to rely on external heavyweight libraries.
+The **Hybrid File Compression System** is a desktop application for Linux that provides a simple, intuitive Graphical User Interface (GUI) to compress and decompress files and folders. It uses a custom multi-stage compression pipeline combining Run-Length Encoding (RLE) and Lempel-Ziv-Welch (LZW) algorithms followed by GZIP, achieving high compression ratios on text-heavy and repetitive data without relying on external heavyweight libraries.
+
+The pipeline is fully binary-safe — it correctly handles all file types including binary files, tar archives, and files containing null bytes or digit characters.
 
 ---
 
 ## ✨ Key Features
 
-- **Custom Pipeline**: Compresses any file using a custom 3-stage pipeline (RLE → LZW → GZIP).
-- **PDF Optimization**: Compresses PDF files directly using Ghostscript (DCT + Flate).
-- **Folder Archiving**: Compresses folders and multiple files by integrating `tar` archiving seamlessly with the pipeline.
+- **Binary-Safe Pipeline**: Compresses any file type (text, binary, archives) using a 3-stage pipeline (RLE → LZW → GZIP).
+- **PDF Optimization**: Compresses PDF files directly using Ghostscript (DCT + Flate), no decompression step needed.
+- **Folder Archiving**: Packages folders into a `.tar` archive and passes it through the full pipeline, producing a single `.tar.gz` output.
 - **User-Friendly GUI**: Simple graphical interface built with Zenity — no terminal knowledge required.
-- **High Efficiency**: Achieves up to **84.9% compression ratio**.
-- **Lightweight**: Written entirely in Bash.
+- **Real Progress Feedback**: Each compression/decompression stage reports live progress to the UI.
+- **Extension Enforcement**: Output files always carry the correct `.gz` or `.tar.gz` extension regardless of what the user types in the save dialog.
+- **Startup Dependency Check**: The application checks for all required tools on launch and shows a clear error if any are missing.
+- **Lightweight**: Written entirely in Bash with Python 3 used inline for binary-safe encode/decode logic.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer       | Technology                        |
-|-------------|-----------------------------------|
-| Language    | Bash Shell Script                 |
-| GUI         | Zenity (GTK-based)                |
-| PDF Engine  | Ghostscript                       |
-| Algorithms  | RLE, LZW, GZIP, DCT, Tar          |
-| Platform    | Linux                             |
+| Layer       | Technology                              |
+|-------------|-----------------------------------------|
+| Language    | Bash Shell Script                       |
+| Encode/Decode | Python 3 (inline, no external files) |
+| GUI         | Zenity (GTK-based)                      |
+| PDF Engine  | Ghostscript                             |
+| Algorithms  | RLE, LZW, GZIP, DCT, Tar               |
+| Platform    | Linux                                   |
 
 ---
 
 ## ⚙️ Prerequisites
 
-Before running the application, ensure you have the following installed on your Linux system:
+Before running the application, ensure the following are installed on your Linux system:
 
-- `bash`: Standard Unix shell.
-- `zenity`: Used to render the graphical interfaces and file dialogues.
-- `ghostscript` (`gs`): Required specifically for PDF compression/optimization.
-- `tar` & `gzip`: Standard archiving and compression binaries.
+- `bash` — Standard Unix shell
+- `python3` — Used for binary-safe RLE and LZW encode/decode
+- `zenity` — Renders the graphical interface and file dialogs
+- `ghostscript` (`gs`) — Required for PDF compression only
+- `tar` & `gzip` — Standard archiving and compression utilities
 
-On Debian/Ubuntu-based systems, you can install the dependencies via:
+On Debian/Ubuntu-based systems:
 ```bash
 sudo apt update
-sudo apt install bash zenity ghostscript tar gzip
+sudo apt install bash python3 zenity ghostscript tar gzip
 ```
 
 ---
@@ -71,8 +77,7 @@ sudo apt install bash zenity ghostscript tar gzip
 
 2. **Make the scripts executable:**
    ```bash
-   chmod +x main.sh
-   chmod +x compression/*.sh decompression/*.sh
+   chmod +x main.sh compression/*.sh decompression/*.sh
    ```
 
 3. **Run the application:**
@@ -81,25 +86,52 @@ sudo apt install bash zenity ghostscript tar gzip
    ```
 
 4. **Navigate the GUI:**
-   - **Compress File**: Select a single text or PDF file to compress.
-   - **Compress Folder**: Select a whole directory to package and compress into an archive.
-   - **Decompress File/Archive**: Select a `.gz` or `.tar.gz` bundle produced by the tool to seamlessly extract it.
+   - **Compress File** — Select any file. PDF files are routed to Ghostscript; all other files go through the RLE → LZW → GZIP pipeline.
+   - **Compress Folder** — Select a directory. It is packaged into a `.tar` archive and passed through the full pipeline, producing a `.tar.gz` output.
+   - **Decompress File/Archive** — Select a `.gz` file to restore the original file, or a `.tar.gz` file to extract the original folder hierarchy to a chosen destination.
 
 ---
 
 ## 🧠 How It Works
 
-### For Text/Binary Files
-When a standard file is selected, it passes through a 3-stage pipeline:
-1. **Run-Length Encoding (RLE)**: Scans the file and replaces consecutive repeated characters with a count followed by the character (e.g., `AAAAA` becomes `5A`). This reduces repetitive data.
-2. **LZW Encoding**: Builds a pattern dictionary from the RLE output and replaces recurring sequences with short integer codes.
-3. **GZIP Compression**: Compresses the LZW-encoded output at level 9, producing the final `.gz` file.
+### Compression Pipeline (Text / Binary / Archive Files)
 
-### For Folders (Archives)
-When a folder is selected for compression, the system groups all containing files and sub-directories into a single `.tar` payload using standard Unix `tar` archiving. The resulting archive is then passed through the standard 3-stage pipeline (RLE → LZW → GZIP), outputting a unified `.tar.gz` payload. Upon decompression, the system automatically detects the archive format, decodes it, and reconstructs the original folder hierarchy in place.
+All non-PDF files pass through a 3-stage pipeline:
 
-### For PDF Files
-PDF files are handled separately using Ghostscript. It applies DCT (Discrete Cosine Transform) to compress embedded images in a lossy manner, while text and fonts are compressed losslessly using Flate encoding. The output is a fully valid, smaller `.pdf` file — no decompression step is needed.
+```
+Input File  →  RLE Encode  →  LZW Encode  →  GZIP (level 9)  →  .gz Output
+```
+
+**Stage 1 — Run-Length Encoding (RLE)**
+Scans the raw bytes of the file and replaces consecutive repeated bytes with a 2-byte token: `[count][byte]`. The count is capped at 255 per run. Every byte — including digits, null bytes, and special characters — is encoded uniformly, making the scheme fully binary-safe and free of digit-ambiguity issues present in text-based RLE.
+
+**Stage 2 — LZW Encoding**
+Builds a pattern dictionary starting with all 256 single-byte entries. As it scans the RLE output, recurring byte sequences are replaced with 16-bit integer codes. The dictionary grows up to 65,535 entries. The output is a binary file containing a 4-byte code count header followed by packed big-endian 16-bit codes.
+
+**Stage 3 — GZIP Compression**
+The LZW-encoded binary is compressed at level 9 using standard `gzip`, producing the final `.gz` output.
+
+### Decompression Pipeline
+
+The reverse pipeline is applied in exact reverse order:
+
+```
+.gz Input  →  GZIP Decompress  →  LZW Decode  →  RLE Decode  →  Original File
+```
+
+For `.tar.gz` archives, after the pipeline restores the `.tar` file, `tar` extracts the original folder hierarchy to the chosen destination.
+
+### PDF Compression
+
+PDF files are handled separately using Ghostscript with three selectable quality levels:
+
+| Level   | DPI  | Description                        |
+|---------|------|------------------------------------|
+| screen  | 72   | Smallest file size, lowest quality |
+| ebook   | 150  | Balanced — recommended             |
+| printer | 300  | High quality                       |
+
+Ghostscript applies **DCT (Discrete Cosine Transform)** to compress embedded images (lossy) and **Flate encoding** to compress text and fonts (lossless). The output is a fully valid, smaller `.pdf` file — no decompression step is required.
 
 ---
 
@@ -107,25 +139,38 @@ PDF files are handled separately using Ghostscript. It applies DCT (Discrete Cos
 
 ```text
 Hybrid-Compression-System/
-├── main.sh                       # Main GUI entry point
-├── README.md                     # Project documentation
-├── compression/                  # Compression logic
-│   ├── compress.sh               # Standard file compression pipeline coordinator
-│   ├── compress_pdf.sh           # Ghostscript PDF optimizer
-│   ├── lzw_encode.sh             # LZW encoder script
-│   └── rle_encode.sh             # Run-Length encoder script
-└── decompression/                # Decompression logic
-    ├── decompress.sh             # Standard pipeline decoder coordinator
-    ├── gzip_decompress.sh        # GZIP decompression script
-    ├── lzw_decode.sh             # LZW decoder script
-    ├── rle_decode.sh             # Run-Length decoder script
-    └── smart_gzip_decompress.sh  # Advanced extraction mapping
+├── main.sh                         # GUI entry point — dependency check, menu, routing
+├── README.md                       # Project documentation
+├── compression/
+│   ├── compress.sh                 # RLE → LZW → GZIP pipeline coordinator
+│   ├── compress_pdf.sh             # Ghostscript PDF optimizer
+│   ├── rle_encode.sh               # Binary-safe RLE encoder (Python 3 inline)
+│   └── lzw_encode.sh               # Binary-safe LZW encoder, packed 16-bit output (Python 3 inline)
+└── decompression/
+    ├── decompress.sh               # Decompression coordinator with progress UI
+    ├── smart_gzip_decompress.sh    # Full reverse pipeline: GZIP → LZW → RLE
+    ├── rle_decode.sh               # Binary-safe RLE decoder (Python 3 inline)
+    ├── lzw_decode.sh               # Binary-safe LZW decoder, packed 16-bit input (Python 3 inline)
+    └── gzip_decompress.sh          # Legacy wrapper — delegates to smart_gzip_decompress.sh
 ```
+
+---
+
+## 🔒 Design Decisions
+
+**Why Python 3 for RLE and LZW?**
+The original implementation used `awk` for encoding and decoding. `awk` processes input line-by-line as text, which means it cannot handle binary files, tar archives, or files containing null bytes. It also introduced a digit-ambiguity bug where digits in the original data were misread as RLE run counts during decoding. Python 3 reads and writes raw bytes, is available on all modern Linux systems, and is embedded inline inside the shell scripts — no separate `.py` files are needed.
+
+**Why packed 16-bit binary codes for LZW?**
+The original implementation wrote one integer per line as ASCII text. For a file producing thousands of LZW codes, this inflated the intermediate file size significantly before GZIP. Packing codes as big-endian 16-bit integers reduces the intermediate size by roughly 3–5× compared to ASCII integers, giving GZIP less work to do and improving overall compression ratio.
+
+**Why enforce output file extensions?**
+Zenity's save dialog does not enforce file extensions. If a user saves a compressed file without typing `.gz`, the decompression handler cannot identify the file format and rejects it. The application now automatically appends `.gz` or `.tar.gz` to the output path if the user omits it.
 
 ---
 
 <div align="center">
 
-Version 1.0 &nbsp;·&nbsp; Linux &nbsp;·&nbsp; Open Source
+Version 1.1 &nbsp;·&nbsp; Linux &nbsp;·&nbsp; Open Source
 
 </div>
