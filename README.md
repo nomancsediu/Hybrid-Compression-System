@@ -331,6 +331,6 @@ Hybrid-Compression-System/
 
 <div align="center">
 
-Version 2.0 &nbsp;·&nbsp; Linux &nbsp;·&nbsp; Open Source
+Version 2.1 &nbsp;·&nbsp; Linux &nbsp;·&nbsp; Open Source
 
 </div>

@@ -5,8 +5,8 @@
 #
 # Usage: ./main.sh
 #
-# Author: Abdullah Al Noman
-# Version: 1.0
+# Author: Abdullah Al Noman, Supan Roy, Md. Ibrahim Hossain Joy, Dilruba Jeba, Md Awal Hossain Munna
+# Version: 2.1
 
 set +e
 
@@ -79,6 +79,19 @@ handle_decompress() {
     [[ -z "$output_file" ]] && return 0
 
     bash "${SCRIPT_DIR}/decompression/decompress.sh" "$input_file" "$output_file"
+    local decompress_exit=$?
+
+    if [[ $decompress_exit -eq 0 ]] && [[ -f "$output_file" ]] && [[ -s "$output_file" ]]; then
+        zenity --info \
+            --title="Decompression Complete" \
+            --text="File decompressed successfully.\n\nSaved to:\n${output_file}" \
+            --width=400 2>/dev/null
+    else
+        zenity --error \
+            --title="Decompression Failed" \
+            --text="Failed to decompress file.\n\nPlease check if the file is a valid compressed archive." \
+            --width=400 2>/dev/null
+    fi
 }
 
 handle_encrypt() {
