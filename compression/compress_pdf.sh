@@ -20,10 +20,7 @@
 set -euo pipefail     # Exit on error, treat unset variables as errors, and fail if any command in a pipeline fails
 
 
-# Function to validate input file and required tools.
-# We check if the input file exists and is a regular file. If not, we show an error message using zenity and exit with a non-zero status code to indicate failure. 
-# We also check if the Ghostscript command (gs) is available on the system, and if not, we show an error message with instructions on how to install it and exit with a non-zero status code.
-# This ensures that we have the necessary input and tools to perform the PDF compression before we proceed with the rest of the script.
+# Function to validate input file and required tools and checking regular file or not
 validate_input() {
     local file="$1"
     if [[ ! -f "$file" ]]; then
@@ -54,9 +51,7 @@ select_quality() {
 }
 
 
-# Function to perform PDF compression using Ghostscript. We run the gs command with the appropriate options to apply DCT compression to images and Flate/LZW compression to text and fonts. 
-# We also show a progress dialog using zenity while the compression is running, and we handle any errors that occur during the compression by showing an error message with the details from Ghostscript's output
-# If the compression is successful, we clean up any temporary files and return from the function.
+# Function to perform PDF compression using Ghostscript. We run the gs command with the appropriate options to apply DCT compression to images and Flate/LZW compression to text and fonts.
 
 compress() {
     local input_file="$1"
@@ -105,9 +100,6 @@ compress() {
 
 
 
-# Function to show a success message with statistics about the original and compressed PDF. We calculate the original size, compressed size, and compression ratio, and then display this information in a zenity info dialog. 
-# If the user has chosen to suppress statistics (by setting the SUPPRESS_STATS environment variable), we skip showing the message. Otherwise, we show the statistics along with a message indicating that the compression was successful and what algorithm was used. The dialog will be displayed with a width of 400 pixels and will not have a cancel button.
-# The compression ratio is calculated using awk to perform floating-point arithmetic
 show_result() {
     local input_file="$1"
     local output_file="$2"

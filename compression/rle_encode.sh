@@ -14,7 +14,6 @@
 set -euo pipefail
 
 # Validate that the input file exists and is a regular file. 
-#If not, show an error message using zenity and exit with a non-zero status code to indicate failure.
 validate_input() {
     local file="$1"
 
@@ -25,10 +24,7 @@ validate_input() {
 }
 
 
-#RLE encoding function. Reads the input file, applies RLE encoding, and writes the output to the specified output file. 
-#The encoding logic processes the input line by line, counting consecutive characters. 
-#If a character is repeated 3 or more times, it outputs the count followed by the character. If a character is repeated less than 3 times, it outputs the character(s) as-is to avoid increasing the size of the output. 
-#After processing each line, it also handles the newline character as part of the sequence. The output is written to the specified output file. 
+#RLE encoding function. Reads the input file, applies RLE encoding, and writes the output to the specified output file.
 
 encode() {
     local input_file="$1" 

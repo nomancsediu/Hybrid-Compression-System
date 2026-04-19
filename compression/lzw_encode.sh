@@ -10,17 +10,9 @@
 
 set -euo pipefail  # Exit on error, treat unset variables as errors, and fail if any command in a pipeline fails
 
-# Validate that the input file exists and is a regular file. If not, show an error message using zenity and exit with a non-zero status code to indicate failure.
+# Validate that the input file exists and is a regular file
 [[ ! -f "$1" ]] && { echo "Error: file not found: $1" >&2; exit 1; }
 
-
-: '
-LZW encoding algorithm implemented in awk. 
-The algorithm initializes a dictionary with all single-byte characters (0-255) and then processes the input line by line, building up sequences of characters and outputting the corresponding codes. 
-The dictionary is updated with new sequences as they are encountered.
-At the end of the input, any remaining sequence is also output as a code. 
-The output is one integer code per line, which can be decoded using the same dictionary-building logic in reverse.
-'
 
 awk '
 BEGIN {
@@ -33,13 +25,6 @@ BEGIN {
     ORS = "\n"
 }
 
-
-
-#Process each line of input, building up sequences of characters and outputting codes. 
-#For each character in the line, we create a new sequence by appending the character to the current sequence w. 
-#If this new sequence wc is already in the dictionary, we update w to be wc and continue. 
-#If wc is not in the dictionary, we output the code for w, add wc to the dictionary with the next available code, and then set w to be the current character c. 
-#After processing all characters in the line, we also handle the newline character as part of the sequence.
 {
     n = length($0)
     for (i = 1; i <= n; i++) {

@@ -1,4 +1,5 @@
-#!/bin/bash   #Shebang line to specify the interpreter to execute the script 
+#!/bin/bash  
+
 #----------------------------------------------------------------------------------------------------|
 # main.sh - Entry point for the Hybrid Compression System GUI.                                       |
 # Author: Abdullah Al Noman, Supan Roy, Md. Ibrahim Hossain Joy, Dilruba Jeba, Md Awal Hossain Munna |
@@ -28,9 +29,9 @@ show_menu() {
         "Decrypt File" 2>/dev/null
 }
 
-#---------------------------------------------|
-#Contributed by Abdullah Al Noman (232-15-797)|
-#---------------------------------------------|
+
+#Contributed by Abdullah Al Noman
+#---------------------------------
 handle_compress() {
     local input_files input_file output_file dir_name base_name name_only extension input_ext out_ext
     local original_size compressed_size
@@ -152,6 +153,8 @@ handle_compress() {
 
 
 
+#Contributed by Supan Roy
+#---------------------------------
 handle_decompress() {                     
     local input_file base_name output_dir
 
@@ -162,23 +165,33 @@ handle_decompress() {
     if [[ "$input_file" == *.tar.gz ]]; then  
         output_dir="$(dirname "$input_file")"
         
-        zenity --progress \                  
-            --title="Extracting Archive" \
-            --text="Extracting folder..." \
-            --pulsate \
-            --width=400 \
-            --no-cancel 2>/dev/null &
-        local zen_pid=$!
+        # Validate input file exists and is readable
+        if [[ ! -f "$input_file" ]] || [[ ! -r "$input_file" ]]; then
+            zenity --error --title="Error" --text="Archive file not found or not readable." --width=400 2>/dev/null
+            return 0
+        fi
+        
+        # Validate output directory is writable
+        if [[ ! -w "$output_dir" ]]; then
+            zenity --error --title="Error" --text="Cannot write to extraction directory.\n\nCheck permissions for:\n${output_dir}" --width=400 2>/dev/null
+            return 0
+        fi
 
-        if tar -xzf "$input_file" -C "$output_dir"; then
-            kill "$zen_pid" 2>/dev/null || true
-            base_name="$(basename "$input_file" .tar.gz)"
+        # Extract without progress dialog (simpler, more reliable)
+        local extract_error
+        extract_error=$(tar -xzf "$input_file" -C "$output_dir" 2>&1)
+        local tar_exit=$?
+
+        if [[ $tar_exit -eq 0 ]]; then
+            # Properly detect the actual top-level directory inside the archive
+            base_name=$(tar -tzf "$input_file" 2>/dev/null | head -1 | cut -d'/' -f1)
+            # Fallback to filename-based detection if archive listing fails
+            [[ -z "$base_name" ]] && base_name="$(basename "$input_file" .tar.gz)"
             zenity --info --title="Extraction Complete" \
                 --text="Archive extracted successfully to:\n${output_dir}/${base_name}" --width=400 2>/dev/null
         else
-            kill "$zen_pid" 2>/dev/null || true
             zenity --error --title="Extraction Failed" \
-                --text="Failed to extract archive." --width=400 2>/dev/null
+                --text="Failed to extract archive.\n\nError: $extract_error" --width=400 2>/dev/null
         fi
         return 0
     fi
@@ -223,6 +236,9 @@ handle_decompress() {
 
 
 
+
+#Contributed by Dilruba Jeba
+#---------------------------------
 handle_encrypt() {
     local input_file output_file dir_name base_name name_only
 
@@ -256,6 +272,8 @@ handle_encrypt() {
 
 
 
+#Contributed by Dilruba Jeba
+#---------------------------------
 handle_decrypt() {
     local input_file output_file dir_name base_name name_only
 
@@ -302,6 +320,8 @@ handle_decrypt() {
 
 
 
+#Contributed by Md Ibrahim Hossain Joy
+#-------------------------------------
 handle_compress_folder() {
     local input_dir output_file base_name
 
@@ -331,7 +351,7 @@ handle_compress_folder() {
 
     (
         echo "50"; echo "# Archiving and compressing folder..."
-        tar -czf "$output_file" -C "$(dirname "$input_dir")" "$base_name"
+        tar -czf "$output_file" -C "$(dirname "$input_dir")" "$base_name"  #actual
         echo "100"; echo "# Done."
     ) | zenity --progress \
             --title="Compressing Folder" \
@@ -377,6 +397,7 @@ handle_compress_folder() {
             --text="Original folder deleted.\nCompressed file saved to:\n${output_file}" --width=400 2>/dev/null
     fi
 }
+
 
 
 
